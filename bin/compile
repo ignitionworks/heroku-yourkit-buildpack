@@ -75,4 +75,4 @@ unzip "$yourkit_archive_download_path" \
     -x 'YourKit-JavaProfiler-*/lib/attach-solaris*' \
     -x 'YourKit-JavaProfiler-*/lib/attach-windows*'
 
-mv "$yourkit_tmp_dir/*" "$yourkit_destination_dir"
+mv "$yourkit_tmp_dir"/* "$yourkit_destination_dir"
