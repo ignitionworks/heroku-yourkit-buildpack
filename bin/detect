@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Always return success
+exit 0

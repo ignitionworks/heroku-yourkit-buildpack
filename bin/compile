@@ -1,0 +1,78 @@
+#!/bin/bash
+# Exit if command fails
+set -e
+# Exit on unset variables
+set -u
+
+build_dir="$1"; shift
+cache_dir="$1"; shift
+env_dir="$1"; shift
+
+yourkit_tmp_dir="/tmp/yourkit"
+
+yourkit_archive_filename="YourKit-JavaProfiler-2020.9-b416.zip"
+yourkit_archive_sha256_sum="b802b2d97722d34ae1dcb005562e32ddff10119650fd94686fb01525cb8a3f9b"
+yourkit_archive_url="https://www.yourkit.com/download/$yourkit_archive_filename"
+yourkit_archive_download_dir="$cache_dir"
+yourkit_archive_download_path="$yourkit_archive_download_dir/$yourkit_archive_filename"
+
+yourkit_destination_dir="$build_dir/yourkit"
+
+sha256sum_bin="/usr/bin/sha256sum"
+checksum_file_path="checksum.sha"
+
+# Generate expected checksum digest
+echo "$yourkit_archive_sha256_sum  $yourkit_archive_download_path" > "$checksum_file_path"
+
+# Check shasum256 installed
+$sha256sum_bin --version > /dev/null
+
+# Check cache
+echo "Checking cache for valid download"
+set +e
+$sha256sum_bin --check "$checksum_file_path"
+exit_value="$?"
+set -e
+
+echo ""
+if [ $exit_value -ne 0 ]
+then
+  echo "Downloading YourKit from '$yourkit_archive_url' to '$yourkit_archive_download_path'"
+  wget --quiet \
+       --directory-prefix "$yourkit_archive_download_dir" \
+       "$yourkit_archive_url"
+  $sha256sum_bin --check "$checksum_file_path"
+else
+  echo "Cached archive '$yourkit_archive_download_path' has correct checksum, skipping download"
+fi
+
+echo ""
+echo "Extracting YourKit's profiling agent to application"
+mkdir -p "$yourkit_tmp_dir"
+unzip "$yourkit_archive_download_path" \
+    -d "$yourkit_tmp_dir" \
+    -x 'YourKit-JavaProfiler-*/samples/*' \
+    -x 'YourKit-JavaProfiler-*/bin/aix-*/*' \
+    -x 'YourKit-JavaProfiler-*/bin/freebsd-*/*' \
+    -x 'YourKit-JavaProfiler-*/bin/hpux-*/*' \
+    -x 'YourKit-JavaProfiler-*/bin/linux-arm-*/*' \
+    -x 'YourKit-JavaProfiler-*/bin/linux-ppc-*/*' \
+    -x 'YourKit-JavaProfiler-*/bin/linux-ppc-*/*' \
+    -x 'YourKit-JavaProfiler-*/bin/linux-x86-32/*' \
+    -x 'YourKit-JavaProfiler-*/bin/mac/*' \
+    -x 'YourKit-JavaProfiler-*/bin/solaris-*/*' \
+    -x 'YourKit-JavaProfiler-*/bin/win*/*' \
+    -x 'YourKit-JavaProfiler-*/bin/profiler.exe' \
+    -x 'YourKit-JavaProfiler-*/bin/profiler.ico' \
+    -x 'YourKit-JavaProfiler-*/bin/*.bat' \
+    -x 'YourKit-JavaProfiler-*/lib/*-plugin/*' \
+    -x 'YourKit-JavaProfiler-*/probes/*' \
+    -x 'YourKit-JavaProfiler-*/samples/*' \
+    -x 'YourKit-JavaProfiler-*/lib/attach-aix*' \
+    -x 'YourKit-JavaProfiler-*/lib/attach-freebsd*' \
+    -x 'YourKit-JavaProfiler-*/lib/attach-hpux*' \
+    -x 'YourKit-JavaProfiler-*/lib/attach-macos*' \
+    -x 'YourKit-JavaProfiler-*/lib/attach-solaris*' \
+    -x 'YourKit-JavaProfiler-*/lib/attach-windows*'
+
+mv "$yourkit_tmp_dir/*" "$yourkit_destination_dir"
